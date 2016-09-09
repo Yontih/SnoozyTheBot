@@ -10,17 +10,28 @@ const VALIDATION_TOKEN = 'hello_world_123';
 
 router.all('/webhook', function *() {
     let req = this.request;
-    let resValue;
+    let data = req.body;
+
+    if (data.object && data.object == 'page') {
+        //this.body = data;
+        console.log(data);
+    } else {
+        this.body = validateWebhook(req);
+    }
+});
+
+function validateWebhook(req) {
+    let response;
     if (req.query['hub.mode'] === 'subscribe' &&
         req.query['hub.verify_token'] === VALIDATION_TOKEN) {
-        resValue = req.query['hub.challenge'];
+        response = req.query['hub.challenge'];
     } else {
         this.status = 403;
-        resValue = 'Failed validation. Make sure the validation tokens match.'
+        response = 'Failed validation. Make sure the validation tokens match.'
     }
 
-    this.body = resValue;
-});
+    return response;
+}
 
 router.get('/', function *() {
     this.body = 'Hello from SnoozyTheBot';
