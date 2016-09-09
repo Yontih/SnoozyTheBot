@@ -32,7 +32,8 @@ class Webhook {
         let data = req.body;
 
         console.log('webhook was triggered');
-        console.log(data);
+        console.log('body:', JSON.stringify(data));
+        console.log('query:', JSON.stringify(this.query));
 
         if (data.object && data.object == 'page') {
             let pageEntry = data.entry[0];
