@@ -13,5 +13,11 @@ router.get('/env', function *() {
 router.get('/config', function *() {
     this.body = config;
 });
+router.get('/data', function *() {
+    let DB = require('../utils/DB');
+    let db = new DB(config.db);
+
+    this.body = yield db.query('select * from test_table');
+});
 
 module.exports = router.routes();
