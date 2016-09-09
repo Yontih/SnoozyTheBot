@@ -41,14 +41,25 @@ class Webhook {
             if (pageEntry) {
                 for (let event of pageEntry.messaging) {
                     let sender = event.sender.id;
-                    let msg = event.message.text;
+
+                    let msg;
+                    if (event.message) {
+                        msg = event.message.text;
+                    } else if (event.delivery) {
+                        msg = 'delivery';
+                    } else if (event.postback) {
+                        msg = 'postback';
+                    } else if (event.optin) {
+                        msg = 'option';
+                        this.body = Webhook._validateWebhook(req, res);
+                    } else {
+                        console.log('Unknown message');
+                    }
 
                     console.log(`${sender}: ${msg}`);
                     sendTextMessage(sender, msg);
                 }
             }
-
-            this.status = 200;
 
             /*let entries = data.entry;
 
