@@ -1,6 +1,5 @@
 'use strict';
 
-const Promise = require('bluebird');
 const pg = require('pg');
 
 pg.defaults.ssl = true;
