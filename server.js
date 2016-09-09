@@ -13,9 +13,11 @@ router.all('/webhook', function *() {
     let req = this.request;
     let data = req.body;
 
+    console.log('webhook was triggered');
+
     if (data.object && data.object == 'page') {
         //this.body = data;
-        console.log(data);
+        console.log(JSON.stringify(data));
     } else {
         this.body = validateWebhook(req);
     }
