@@ -6,8 +6,20 @@ const Router = require('koa-router');
 let app = new koa();
 let router = Router();
 
+const VALIDATION_TOKEN = 'hello_world_123';
+
 router.all('/webhook', function *() {
-    this.body = 33204178;
+    let req = this.request;
+    let resValue;
+    if (req.query['hub.mode'] === 'subscribe' &&
+        req.query['hub.verify_token'] === VALIDATION_TOKEN) {
+        resValue = req.query['hub.challenge'];
+    } else {
+        this.status = 403;
+        resValue = 'Failed validation. Make sure the validation tokens match.'
+    }
+
+    this.body = resValue;
 });
 
 router.get('/', function *() {
