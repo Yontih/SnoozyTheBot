@@ -2,6 +2,7 @@
 
 const koa = require('koa');
 const Router = require('koa-router');
+const bodyParser = require('koa-bodyparser');
 
 let app = new koa();
 let router = Router();
@@ -38,7 +39,8 @@ router.get('/', function *() {
 });
 
 let port = process.env.PORT || 5485;
-app.use(router.routes())
+app.use(bodyParser())
+    .use(router.routes())
     .listen(port, () => {
         console.log(`Server is up on port ${port}`);
     });
