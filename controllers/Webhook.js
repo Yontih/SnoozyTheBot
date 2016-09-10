@@ -36,61 +36,123 @@ class Webhook {
         console.log('query:', JSON.stringify(this.query));
 
         if (data.object && data.object == 'page') {
-            let pageEntry = data.entry[0];
+            for (let pageEntry of data.entry) {
+                if (pageEntry) {
+                    for (let event of pageEntry.messaging) {
+                        let sender = event.sender.id;
+                        console.log(`${sender}: ${msg}`);
 
-            if (pageEntry) {
-                for (let event of pageEntry.messaging) {
-                    let sender = event.sender.id;
+                        if (event.message) {
+                            sendTextMessage(sender, event.message.text);
+                        } else if (event.delivery) {
+                            Webhook._receivedDeliveryConfirmation(event);
+                        } else if (event.postback) {
+                            Webhook._receivedPostback(event);
+                        } else if (event.optin) {
+                            Webhook._receivedAuthentication(event)
+                        } else {
+                            console.log('Unknown message');
+                        }
 
-                    let msg;
-                    if (event.message) {
-                        msg = event.message.text;
-                    } else if (event.delivery) {
-                        msg = 'delivery';
-                    } else if (event.postback) {
-                        msg = 'postback';
-                    } else if (event.optin) {
-                        msg = 'option';
-                        this.body = Webhook._validateWebhook(req, res);
-                    } else {
-                        console.log('Unknown message');
                     }
-
-                    console.log(`${sender}: ${msg}`);
-                    sendTextMessage(sender, msg);
                 }
             }
-
-            /*let entries = data.entry;
-
-             for (let entry of entries) {
-             console.log(`${new Date(entry.time)}: id ${entry.id}`);
-             let messaging = entry.messaging;
-             for (let msg of messaging) {
-             let sender = msg.sender;
-             }
-             }*/
-
-            //this.body = data;
-            // console.log(JSON.stringify(data));
-        } else {
-            this.body = Webhook._validateWebhook(req, res);
         }
     }
 
-    static _validateWebhook(req, res) {
-        let response;
+    static validateWebhook() {
+        let req = this.request;
+        let res = this.response;
+
+        let resMsg;
         if (req.query['hub.mode'] === 'subscribe' &&
             req.query['hub.verify_token'] === VALIDATION_TOKEN) {
-            response = req.query['hub.challenge'];
+            resMsg = req.query['hub.challenge'];
         } else {
             res.status = 403;
-            response = 'Failed validation. Make sure the validation tokens match.'
+            resMsg = 'Failed validation. Make sure the validation tokens match.'
         }
 
-        return response;
+        res.body = resMsg;
     }
 
+    /**
+     * Authorization Event
+     *
+     * The value for 'optin.ref' is defined in the entry point. For the "Send to
+     * Messenger" plugin, it is the 'data-ref' field. Read more at
+     * https://developers.facebook.com/docs/messenger-platform/webhook-reference/authentication
+     *
+     */
+    static _receivedAuthentication(event) {
+        var senderID = event.sender.id;
+        var recipientID = event.recipient.id;
+        var timeOfAuth = event.timestamp;
+
+        // The 'ref' field is set in the 'Send to Messenger' plugin, in the 'data-ref'
+        // The developer can set this to an arbitrary value to associate the
+        // authentication callback with the 'Send to Messenger' click event. This is
+        // a way to do account linking when the user clicks the 'Send to Messenger'
+        // plugin.
+        var passThroughParam = event.optin.ref;
+
+        console.log("Received authentication for user %d and page %d with pass " +
+            "through param '%s' at %d", senderID, recipientID, passThroughParam,
+            timeOfAuth);
+
+        // When an authentication is received, we'll send a message back to the sender
+        // to let them know it was successful.
+        sendTextMessage(senderID, "Authentication successful");
+    }
+
+    /**
+     * Delivery Confirmation Event
+     *
+     * This event is sent to confirm the delivery of a message. Read more about
+     * these fields at https://developers.facebook.com/docs/messenger-platform/webhook-reference/message-delivered
+     *
+     */
+    static _receivedDeliveryConfirmation(event) {
+        var senderID = event.sender.id;
+        var recipientID = event.recipient.id;
+        var delivery = event.delivery;
+        var messageIDs = delivery.mids;
+        var watermark = delivery.watermark;
+        var sequenceNumber = delivery.seq;
+
+        if (messageIDs) {
+            messageIDs.forEach(function (messageID) {
+                console.log("Received delivery confirmation for message ID: %s",
+                    messageID);
+            });
+        }
+
+        console.log("All message before %d were delivered.", watermark);
+    }
+
+    /*
+     * Postback Event
+     *
+     * This event is called when a postback is tapped on a Structured Message.
+     * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
+     *
+     */
+    static _receivedPostback(event) {
+        var senderID = event.sender.id;
+        var recipientID = event.recipient.id;
+        var timeOfPostback = event.timestamp;
+
+        // The 'payload' param is a developer-defined field which is set in a postback
+        // button for Structured Messages.
+        var payload = event.postback.payload;
+
+        console.log("Received postback for user %d and page %d with payload '%s' " +
+            "at %d", senderID, recipientID, payload, timeOfPostback);
+
+        // When a postback is called, we'll send a message back to the sender to
+        // let them know it was successful
+        sendTextMessage(senderID, "Postback called");
+    }
 }
 
 module.exports = Webhook;

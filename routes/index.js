@@ -5,7 +5,8 @@ const router = require('koa-router')();
 const config = require('../config');
 const Webhook = require('../controllers/Webhook');
 
-router.all('/webhook', Webhook.handle);
+router.get('/webhook', Webhook.validateWebhook);
+router.post('/webhook', Webhook.handle);
 
 router.get('/env', function *() {
     this.body = process.env;
