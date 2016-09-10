@@ -6,7 +6,7 @@ const request = require('request');
 const token = 'EAAK2MzqoLPIBAAEBj0q3sBaHVAavdeqbfZAL5m4LZCeBBx4t4ZCcNPlEvw9DUSeJxPMlBr3zTyIBkWoN2NecNCYwoivIHXGA7UPsA3phEYZBz5qww4vRrjcyLtcZACYO9SZAPF0ZCs1iOmigYOl3urXpyDpZBwjjPovLf88ccXW90QZDZD';
 
 function sendTextMessage(sender, text) {
-    let messageData = {text: text}
+    let messageData = {text: text};
     request({
         url: 'https://graph.facebook.com/v2.6/me/messages',
         qs: {access_token: token},
