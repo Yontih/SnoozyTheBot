@@ -78,7 +78,7 @@ class Webhook {
         let senderId = event.sender.id;
         let msg = event.message;
         let isEcho = msg.is_echo;
-        let quickReply = message.quick_reply;
+        let quickReply = msg.quick_reply;
         let msgId = msg.mid;
 
         if (isEcho) {
