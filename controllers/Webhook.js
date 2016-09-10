@@ -54,6 +54,9 @@ class Webhook {
                 }
             }
         }
+
+        res.status = 200;
+        res.body = 'ok;'
     }
 
     static validateWebhook() {
