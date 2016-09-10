@@ -38,9 +38,8 @@ class Webhook {
             for (let pageEntry of data.entry) {
                 if (pageEntry) {
                     for (let event of pageEntry.messaging) {
-                        let sender = event.sender.id;
                         if (event.message) {
-                            sendTextMessage(sender, event.message.text);
+                            Webhook._receivedMessage(event);
                         } else if (event.delivery) {
                             Webhook._receivedDeliveryConfirmation(event);
                         } else if (event.postback) {
@@ -73,6 +72,26 @@ class Webhook {
         }
 
         res.body = resMsg;
+    }
+
+    static _receivedMessage(event) {
+        let senderId = event.sender.id;
+        let msg = event.message;
+        let isEcho = msg.is_echo;
+        let quickReply = message.quick_reply;
+        let msgId = msg.mid;
+
+        if (isEcho) {
+            console.log("Received echo for message %s and app %d with metadata %s",
+                msgId, msg.app_id, msg.metadata);
+        } else if (quickReply) {
+            console.log("Quick reply for message %s with payload %s",
+                msgId, quickReply.payload);
+
+            sendTextMessage(senderId, "Quick reply tapped");
+        } else {
+            sendTextMessage(senderId, msg.text);
+        }
     }
 
     /**
