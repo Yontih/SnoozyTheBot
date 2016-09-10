@@ -31,17 +31,14 @@ class Webhook {
         let res = this.response;
         let data = req.body;
 
-        console.log('webhook was triggered');
+        console.log('POST/Webhook was triggered');
         console.log('body:', JSON.stringify(data));
-        console.log('query:', JSON.stringify(this.query));
 
         if (data.object && data.object == 'page') {
             for (let pageEntry of data.entry) {
                 if (pageEntry) {
                     for (let event of pageEntry.messaging) {
                         let sender = event.sender.id;
-                        console.log(`${sender}: ${msg}`);
-
                         if (event.message) {
                             sendTextMessage(sender, event.message.text);
                         } else if (event.delivery) {
@@ -63,6 +60,8 @@ class Webhook {
     static validateWebhook() {
         let req = this.request;
         let res = this.response;
+
+        console.log('GET/Webhook was triggered');
 
         let resMsg;
         if (req.query['hub.mode'] === 'subscribe' &&
