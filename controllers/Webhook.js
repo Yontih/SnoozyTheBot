@@ -21,10 +21,12 @@ function generateMoreButtons(count) {
 }
 
 function *sendButtons(userId) {
+    let buttons = generateMoreButtons();
+    console.log(buttons);
     try {
-        yield client.sendButtonMessage(userId, generateMoreButtons());
+        yield client.sendButtonMessage(userId, buttons);
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 
