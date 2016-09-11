@@ -13,6 +13,8 @@ class FBClient extends Client {
      * @param options.token: messenger access token
      */
     constructor(options) {
+        super();
+
         this.token = _.get(options, 'token');
         this.client = new FBMessenger(this.token);
     }
