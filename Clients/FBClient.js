@@ -34,12 +34,12 @@ class FBClient extends Client {
          });*/
     }
 
-    sendButtonMessage(userId, buttons, notificationType) {
+    sendButtonsMessage(userId, text, buttons, notificationType) {
         return this.client.sendButtonsMessageAsync(userId, buttons, notificationType);
     }
 
     setPersistentMenu(buttons) {
-        return this.client.setPersistentMenuAsync(this.pageId, buttons);
+        return this.client.setPersistentMenuAsync(this.pageId, text, buttons);
     }
 
     sendMessage(userId, data, notificationType) {
