@@ -1,28 +1,14 @@
 'use strict';
 
 const VALIDATION_TOKEN = 'hello_world_123';
-const request = require('request');
+const FBClient = require('../Clients/FBClient');
+
 
 const token = 'EAAK2MzqoLPIBAAEBj0q3sBaHVAavdeqbfZAL5m4LZCeBBx4t4ZCcNPlEvw9DUSeJxPMlBr3zTyIBkWoN2NecNCYwoivIHXGA7UPsA3phEYZBz5qww4vRrjcyLtcZACYO9SZAPF0ZCs1iOmigYOl3urXpyDpZBwjjPovLf88ccXW90QZDZD';
 
-function sendTextMessage(sender, text) {
-    let messageData = {text: text};
-    request({
-        url: 'https://graph.facebook.com/v2.6/me/messages',
-        qs: {access_token: token},
-        method: 'POST',
-        json: {
-            recipient: {id: sender},
-            message: messageData,
-        }
-    }, function (error, response, body) {
-        if (error) {
-            console.log('Error sending messages: ', error)
-        } else if (response.body.error) {
-            console.log('Error: ', response.body.error)
-        }
-    })
-}
+const client = new FBClient({
+    token: token
+});
 
 
 class Webhook {
@@ -39,13 +25,13 @@ class Webhook {
                 if (pageEntry) {
                     for (let event of pageEntry.messaging) {
                         if (event.message) {
-                            Webhook._receivedMessage(event);
+                            yield Webhook._receivedMessage(event);
                         } else if (event.delivery) {
-                            Webhook._receivedDeliveryConfirmation(event);
+                            // Webhook._receivedDeliveryConfirmation(event);
                         } else if (event.postback) {
-                            Webhook._receivedPostback(event);
+                            yield Webhook._receivedPostback(event);
                         } else if (event.optin) {
-                            Webhook._receivedAuthentication(event)
+                            // Webhook._receivedAuthentication(event)
                         } else {
                             console.log('Unknown message');
                         }
@@ -77,12 +63,19 @@ class Webhook {
         res.body = resMsg;
     }
 
-    static _receivedMessage(event) {
+    static *_receivedMessage(event) {
         let senderId = event.sender.id;
         let msg = event.message;
         let isEcho = msg.is_echo;
         let quickReply = msg.quick_reply;
         let msgId = msg.mid;
+
+        yield client.sendMessage(senderId, {
+            setting_type: "greeting",
+            greeting: {
+                "text": "Welcome to SnoozyTheBot"
+            }
+        }, FBClient.NOTIFICATION_TYPE.NO_PUSH);
 
         if (isEcho) {
             console.log("Received echo for message %s and app %d with metadata %s",
@@ -91,9 +84,9 @@ class Webhook {
             console.log("Quick reply for message %s with payload %s",
                 msgId, quickReply.payload);
 
-            sendTextMessage(senderId, "Quick reply tapped");
+            yield client.sendTextMessage(senderId, "Quick reply tapped");
         } else {
-            sendTextMessage(senderId, msg.text);
+            yield client.sendTextMessage(senderId, msg.text);
         }
     }
 
@@ -158,7 +151,7 @@ class Webhook {
      * https://developers.facebook.com/docs/messenger-platform/webhook-reference/postback-received
      *
      */
-    static _receivedPostback(event) {
+    static *_receivedPostback(event) {
         var senderID = event.sender.id;
         var recipientID = event.recipient.id;
         var timeOfPostback = event.timestamp;
@@ -172,7 +165,7 @@ class Webhook {
 
         // When a postback is called, we'll send a message back to the sender to
         // let them know it was successful
-        sendTextMessage(senderID, "Postback called");
+        yield client.sendTextMessage(senderID, "Postback called");
     }
 }
 
