@@ -8,8 +8,7 @@ const config = require('./config');
 let app = new koa();
 let port = process.env.PORT || config.server.port;
 
-/*
-const fbClient = require('./Clients').fb;
+/*const fbClient = require('./Clients').fb;
 fbClient.setPersistentMenu([
     {
         type: 'postback',
@@ -30,11 +29,15 @@ fbClient.setPersistentMenu([
         type: 'postback',
         title: 'More',
         payload: 'more'
+    },
+    {
+        type: 'postback',
+        title: 'Less',
+        payload: 'less'
     }
 ]).then((data) => {
     console.log('res:', data);
-});
-*/
+});*/
 
 app.use(bodyParser())
     .use(require('./routes'))

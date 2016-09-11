@@ -4,26 +4,20 @@ const VALIDATION_TOKEN = 'hello_world_123';
 
 const client = require('../Clients').fb;
 
-function generateMoreButtons(count) {
-    count = count || 3;
-    let buttons = [];
-
-    for (let i = 0; i < count; i++) {
-        let value = i + 1;
-        buttons.push({
+function generateButtons(values) {
+    return values.map((value) => {
+        return {
             type: 'postback',
             title: `${value} minutes`,
             payload: `${value}m`
-        });
-    }
-
-    return buttons;
+        };
+    });
 }
 
-function *sendButtons(userId) {
-    let buttons = generateMoreButtons();
+function *sendButtons(userId, text, values) {
+    let buttons = generateButtons(values);
     try {
-        yield client.sendButtonsMessage(userId, 'More', buttons);
+        yield client.sendButtonsMessage(userId, text, buttons);
     } catch (err) {
         console.error(err);
     }
@@ -98,8 +92,11 @@ class Webhook {
             yield client.sendTextMessage(senderId, "Quick reply tapped");
         } else {
 
-            if (msg.text.toLowerCase() == 'more') {
-                yield sendButtons(senderId);
+            let text = msg.text.toLowerCase();
+            if (text == 'more') {
+                yield sendButtons(senderId, 'More', [15, 20, 30]);
+            } else if (text == 'less') {
+                yield sendButtons(senderId, 'More', [1, 2, 4]);
             } else {
                 yield client.sendTextMessage(senderId, 'Unsupported command');
             }
@@ -176,8 +173,13 @@ class Webhook {
         // button for Structured Messages.
         let payload = event.postback.payload;
 
-        if (payload.toLowerCase() == 'more') {
-            yield sendButtons(senderId);
+        let text = payload.toLowerCase();
+        if (text == 'more') {
+            yield sendButtons(senderId, 'More', [15, 20, 30]);
+        } else if (text == 'less') {
+            yield sendButtons(senderId, 'More', [1, 2, 4]);
+        } else {
+            yield client.sendTextMessage(senderId, 'Unsupported command');
         }
 
 
