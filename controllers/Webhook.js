@@ -70,12 +70,12 @@ class Webhook {
         let quickReply = msg.quick_reply;
         let msgId = msg.mid;
 
-        yield client.sendMessage(senderId, {
+        /*yield client.sendMessage(senderId, {
             setting_type: "greeting",
             greeting: {
                 "text": "Welcome to SnoozyTheBot"
             }
-        }, FBClient.NOTIFICATION_TYPE.NO_PUSH);
+        }, FBClient.NOTIFICATION_TYPE.NO_PUSH);*/
 
         if (isEcho) {
             console.log("Received echo for message %s and app %d with metadata %s",
