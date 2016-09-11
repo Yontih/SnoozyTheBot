@@ -5,7 +5,7 @@ const VALIDATION_TOKEN = 'hello_world_123';
 const client = require('../Clients').fb;
 
 function generateMoreButtons(count) {
-    count = count || 10;
+    count = count || 3;
     let buttons = [];
 
     for (let i = 0; i < count; i++) {
