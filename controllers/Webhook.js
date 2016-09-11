@@ -4,6 +4,22 @@ const VALIDATION_TOKEN = 'hello_world_123';
 
 const client = require('../Clients').fb;
 
+function generateMoreButtons(count) {
+    count = count || 10;
+    let buttons = [];
+
+    for (let i = 0; i < count; i++) {
+        let value = i + 1;
+        buttons.push({
+            type: 'postback',
+            title: `${value} minutes`,
+            payload: `${value}m`
+        });
+    }
+
+    return buttons;
+}
+
 class Webhook {
     static *handle() {
         let req = this.request;
@@ -63,13 +79,6 @@ class Webhook {
         let quickReply = msg.quick_reply;
         let msgId = msg.mid;
 
-        /*yield client.sendMessage(senderId, {
-            setting_type: "greeting",
-            greeting: {
-                "text": "Welcome to SnoozyTheBot"
-            }
-        }, FBClient.NOTIFICATION_TYPE.NO_PUSH);*/
-
         if (isEcho) {
             console.log("Received echo for message %s and app %d with metadata %s",
                 msgId, msg.app_id, msg.metadata);
@@ -79,7 +88,12 @@ class Webhook {
 
             yield client.sendTextMessage(senderId, "Quick reply tapped");
         } else {
-            yield client.sendTextMessage(senderId, msg.text);
+
+            if (msg.text == 'more') {
+                yield client.sendButtonMessage(senderId, generateMoreButtons());
+            } else {
+                yield client.sendTextMessage(senderId, 'Unsupported command');
+            }
         }
     }
 
@@ -145,20 +159,19 @@ class Webhook {
      *
      */
     static *_receivedPostback(event) {
-        var senderID = event.sender.id;
-        var recipientID = event.recipient.id;
+        var senderId = event.sender.id;
+        var recipientId = event.recipient.id;
         var timeOfPostback = event.timestamp;
 
         // The 'payload' param is a developer-defined field which is set in a postback
         // button for Structured Messages.
-        var payload = event.postback.payload;
+        let payload = event.postback.payload;
 
-        console.log("Received postback for user %d and page %d with payload '%s' " +
-            "at %d", senderID, recipientID, payload, timeOfPostback);
+        if (payload == 'more') {
+            yield client.sendButtonMessage(senderId, generateMoreButtons());
+        }
 
-        // When a postback is called, we'll send a message back to the sender to
-        // let them know it was successful
-        yield client.sendTextMessage(senderID, "Postback called");
+
     }
 }
 

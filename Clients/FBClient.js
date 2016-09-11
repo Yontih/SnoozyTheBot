@@ -34,6 +34,14 @@ class FBClient extends Client {
          });*/
     }
 
+    sendButtonMessage(userId, buttons, notificationType) {
+        return this.client.sendButtonsMessageAsync(userId, buttons, notificationType);
+    }
+
+    setPersistentMenu(buttons) {
+        return this.client.setPersistentMenuAsync(this.pageId, buttons);
+    }
+
     sendMessage(userId, data, notificationType) {
         return this.client.sendMessageAsync(userId, data, notificationType);
         /*return new Promise((resolve, reject) => {
