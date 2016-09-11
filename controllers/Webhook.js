@@ -20,6 +20,14 @@ function generateMoreButtons(count) {
     return buttons;
 }
 
+function *sendButtons(userId) {
+    try {
+        yield client.sendButtonMessage(userId, generateMoreButtons());
+    } catch (err) {
+        console.log(err);
+    }
+}
+
 class Webhook {
     static *handle() {
         let req = this.request;
@@ -89,8 +97,8 @@ class Webhook {
             yield client.sendTextMessage(senderId, "Quick reply tapped");
         } else {
 
-            if (msg.text == 'more') {
-                yield client.sendButtonMessage(senderId, generateMoreButtons());
+            if (msg.text.toLowerCase() == 'more') {
+                yield sendButtons(senderId);
             } else {
                 yield client.sendTextMessage(senderId, 'Unsupported command');
             }
@@ -123,7 +131,7 @@ class Webhook {
 
         // When an authentication is received, we'll send a message back to the sender
         // to let them know it was successful.
-        sendTextMessage(senderID, "Authentication successful");
+        // sendTextMessage(senderID, "Authentication successful");
     }
 
     /**
@@ -167,8 +175,8 @@ class Webhook {
         // button for Structured Messages.
         let payload = event.postback.payload;
 
-        if (payload == 'more') {
-            yield client.sendButtonMessage(senderId, generateMoreButtons());
+        if (payload.toLowerCase() == 'more') {
+            yield sendButtons(senderId);
         }
 
 
