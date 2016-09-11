@@ -62,4 +62,4 @@ class FBClient extends Client {
     }
 }
 
-module.exports = FBMessenger;
+module.exports = FBClient;
