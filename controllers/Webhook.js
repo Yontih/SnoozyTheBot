@@ -25,11 +25,11 @@ function *sendButtons(userId, text, values) {
     }
 }
 
-function tryParseJson(value) {
+function transformRequestValue(value) {
     try {
         return JSON.parse(value);
     } catch (err) {
-        return value;
+        return value.toLowerCase();
     }
 }
 
@@ -56,7 +56,7 @@ function parseEvent(event) {
             type,
             userPageId: senderId,
             timestamp: timestamp,
-            value: value.toLowerCase()
+            value: transformRequestValue(value)
         }
     );
 }
@@ -68,7 +68,7 @@ class Webhook {
         let data = req.body;
 
         console.log('POST/Webhook was triggered');
-        console.log('body:', JSON.stringify(data));
+        // console.log('body:', JSON.stringify(data));
 
         if (data.object && data.object == 'page') {
             for (let pageEntry of data.entry) {
@@ -87,6 +87,7 @@ class Webhook {
                     }
 
                     if (parsedEvent) {
+                        console.log(parsedEvent);
                         yield processParsedEvent(parsedEvent);
                     }
                 }
@@ -225,7 +226,6 @@ class Webhook {
 }
 
 function *processParsedEvent(event) {
-    console.log(event);
     let value = event.value;
     // value can be command (value.command) or request (value.request) or a string
 
