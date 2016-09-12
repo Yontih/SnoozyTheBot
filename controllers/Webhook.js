@@ -225,6 +225,7 @@ class Webhook {
 }
 
 function *processParsedEvent(event) {
+    console.log(event);
     let value = event.value;
     // value can be command (value.command) or request (value.request) or a string
 
@@ -242,11 +243,13 @@ function *processParsedEvent(event) {
 }
 
 function *processCommand(event) {
-    yield client.sendTextMessage(event.userPageId, `Processing ${event.value}`);
+    let senderId = event.userPageId;
+    yield client.sendTextMessage(senderId, `Processing ${event.value}`);
 }
 
 function *processRequest(event) {
     let value = event.value;
+    let senderId = event.userPageId;
 
     if (value === 'more') {
         yield sendButtons(senderId, 'When should I notify you?', [15, 20, 30]);
