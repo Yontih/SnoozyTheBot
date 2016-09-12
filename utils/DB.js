@@ -55,4 +55,16 @@ class Transaction {
     }
 }
 
-module.exports = DB;
+let instance = null;
+function getInstance() {
+    if (!instance) {
+        instance = new DB(require('../config').db);
+    }
+
+    return instance;
+}
+
+module.exports = {
+    instance: getInstance(),
+    class: DB
+};

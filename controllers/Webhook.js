@@ -1,15 +1,17 @@
 'use strict';
 
-const VALIDATION_TOKEN = 'hello_world_123';
-
+const _ = require('lodash');
 const client = require('../Clients').fb;
+
+const VALIDATION_TOKEN = 'hello_world_123';
 
 function generateButtons(values) {
     return values.map((value) => {
+        let payload = JSON.stringify({command: `${value}m`});
         return {
             type: 'postback',
             title: `${value} minutes`,
-            payload: `${value}m`
+            payload: payload
         };
     });
 }
@@ -21,6 +23,42 @@ function *sendButtons(userId, text, values) {
     } catch (err) {
         console.error(err);
     }
+}
+
+function tryParseJson(value) {
+    try {
+        return JSON.parse(value);
+    } catch (err) {
+        return value;
+    }
+}
+
+function parseEvent(event) {
+    let senderId = event.sender.id;
+    let timestamp = event.timestamp;
+    let value = null, type, additonalData = {};
+    // extract command from message or postback events
+    if (event.message) {
+        value = event.message.text;
+        additonalData = _.omit(event.message, 'text');
+        type = 'message';
+    } else if (event.postback) {
+        value = event.postback.payload;
+        type = 'postback';
+    } else {
+        throw new Error('Unknown event type');
+    }
+
+    return Object.assign(
+        {},
+        additonalData,
+        {
+            type,
+            userPageId: senderId,
+            timestamp: timestamp,
+            value: value.toLowerCase()
+        }
+    );
 }
 
 class Webhook {
@@ -35,19 +73,21 @@ class Webhook {
         if (data.object && data.object == 'page') {
             for (let pageEntry of data.entry) {
                 if (pageEntry) {
+                    let parsedEvent = null;
                     for (let event of pageEntry.messaging) {
-                        if (event.message) {
-                            yield Webhook._receivedMessage(event);
+                        if (event.message || event.postback) {
+                            parsedEvent = parseEvent(event);
                         } else if (event.delivery) {
                             // Webhook._receivedDeliveryConfirmation(event);
-                        } else if (event.postback) {
-                            yield Webhook._receivedPostback(event);
                         } else if (event.optin) {
                             // Webhook._receivedAuthentication(event)
                         } else {
                             console.log('Unknown message');
                         }
+                    }
 
+                    if (parsedEvent) {
+                        yield processParsedEvent(parsedEvent);
                     }
                 }
             }
@@ -175,14 +215,45 @@ class Webhook {
 
         let text = payload.toLowerCase();
         if (text == 'more') {
-            yield sendButtons(senderId, 'More', [15, 20, 30]);
+            yield sendButtons(senderId, 'When should I notify you?', [15, 20, 30]);
         } else if (text == 'less') {
-            yield sendButtons(senderId, 'More', [1, 2, 4]);
+            yield sendButtons(senderId, 'When should I notify you?', [1, 2, 4]);
         } else {
             yield client.sendTextMessage(senderId, 'Unsupported command');
         }
+    }
+}
 
+function *processParsedEvent(event) {
+    let value = event.value;
+    // value can be command (value.command) or request (value.request) or a string
 
+    if (value.command) {
+        event.value = value.command;
+        yield processCommand(event);
+    } else if (value.request) {
+        event.value = value.request;
+        yield processRequest(event)
+    } else if (typeof value === 'string') {
+        yield processRequest(event)
+    } else {
+        yield client.sendTextMessage(senderId, 'Unsupported command');
+    }
+}
+
+function *processCommand(event) {
+    yield client.sendTextMessage(event.userPageId, `Processing ${event.value}`);
+}
+
+function *processRequest(event) {
+    let value = event.value;
+
+    if (value === 'more') {
+        yield sendButtons(senderId, 'When should I notify you?', [15, 20, 30]);
+    } else if (value === 'less') {
+        yield sendButtons(senderId, 'When should I notify you?', [1, 2, 4]);
+    } else {
+        yield client.sendTextMessage(senderId, 'Unsupported request');
     }
 }
 

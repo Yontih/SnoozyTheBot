@@ -15,9 +15,7 @@ router.get('/config', function *() {
     this.body = config;
 });
 router.get('/data', function *() {
-    let DB = require('../utils/DB');
-    let db = new DB(config.db);
-
+    let db = require('../utils/DB').instance;
     this.body = yield db.query('select * from test_table');
 });
 

@@ -9,35 +9,39 @@ let app = new koa();
 let port = process.env.PORT || config.server.port;
 
 /*const fbClient = require('./Clients').fb;
+fbClient.getProfile(1189998357738253)
+    .then((data) => {
+        console.log(data);
+    });
 fbClient.setPersistentMenu([
-    {
-        type: 'postback',
-        title: '10 minutes',
-        payload: '10m'
-    },
-    {
-        type: 'postback',
-        title: '7 minutes',
-        payload: '7m'
-    },
-    {
-        type: 'postback',
-        title: '5 minutes',
-        payload: '5m'
-    },
-    {
-        type: 'postback',
-        title: 'More',
-        payload: 'more'
-    },
-    {
-        type: 'postback',
-        title: 'Less',
-        payload: 'less'
-    }
-]).then((data) => {
-    console.log('res:', data);
-});*/
+ {
+ type: 'postback',
+ title: '10 minutes',
+ payload: '10m'
+ },
+ {
+ type: 'postback',
+ title: '7 minutes',
+ payload: '7m'
+ },
+ {
+ type: 'postback',
+ title: '5 minutes',
+ payload: '5m'
+ },
+ {
+ type: 'postback',
+ title: 'More',
+ payload: 'more'
+ },
+ {
+ type: 'postback',
+ title: 'Less',
+ payload: 'less'
+ }
+ ]).then((data) => {
+ console.log('res:', data);
+ });*/
 
 app.use(bodyParser())
     .use(require('./routes'))
