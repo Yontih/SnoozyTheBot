@@ -13,30 +13,38 @@ let port = process.env.PORT || config.server.port;
     {
         type: 'postback',
         title: '10 minutes',
-        payload: JSON.stringify({command: '10m'})
+        payload: JSON.stringify({command: {alert: {time: 10, unit: 'm'}}})
     },
     {
         type: 'postback',
         title: '7 minutes',
-        payload: JSON.stringify({command: '7m'})
+        payload: JSON.stringify({command: {alert: {time: 7, unit: 'm'}}})
     },
     {
         type: 'postback',
         title: '5 minutes',
-        payload: JSON.stringify({command: '5m'})
+        payload: JSON.stringify({command: {alert: {time: 5, unit: 'm'}}})
     },
     {
         type: 'postback',
         title: 'More',
-        payload: JSON.stringify({request: 'more'})
+        payload: JSON.stringify({request: {value: 'more'}})
     },
     {
         type: 'postback',
         title: 'Less',
-        payload: JSON.stringify({request: 'less'})
+        payload: JSON.stringify({request: {value: 'less'}})
     }
 ]).then((data) => {
     console.log('res:', data);
+});*/
+
+/*let model = require('./models/Model');
+model.getUserAlert(5)
+    .then((result) => {
+        console.log(result);
+    }).catch((err) => {
+    console.log(err);
 });*/
 
 app.use(bodyParser())

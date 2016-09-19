@@ -23,15 +23,6 @@ class FBClient extends Client {
 
     sendTextMessage(userId, text, notificationType) {
         return this.client.sendTextMessageAsync(userId, text);
-        /*return new Promise((resolve, reject) => {
-         this.client.sendTextMessage(userId, text, (err, body) => {
-         if (err) {
-         return reject(err);
-         }
-
-         return resolve(body);
-         });
-         });*/
     }
 
     sendButtonsMessage(userId, text, buttons, notificationType) {
@@ -44,41 +35,14 @@ class FBClient extends Client {
 
     sendMessage(userId, data, notificationType) {
         return this.client.sendMessageAsync(userId, data, notificationType);
-        /*return new Promise((resolve, reject) => {
-         this.client.sendMessage(userId, data, notificationType, (err, body) => {
-         if (err) {
-         return reject(err);
-         }
-
-         return resolve(body);
-         });
-         });*/
     }
 
     getProfile(userId) {
         return this.client.getProfileAsync(userId);
-        /*        return new Promise((resolve, reject) => {
-         this.client.getProfile(userId, (err, body) => {
-         if (err) {
-         return reject(err);
-         }
-
-         return resolve(body);
-         });
-         });*/
     }
 
     setGreetingText(text) {
         return this.client.setGreetingTextAsync(this.pageId, text);
-        /*return new Promise((resolve, reject) => {
-         this.client.setGreetingText(this.pageId, text, (err, body) => {
-         if (err) {
-         return reject(err);
-         }
-
-         return resolve(body);
-         });
-         });*/
     }
 
     static get NOTIFICATION_TYPE() {

@@ -1,23 +1,38 @@
 'use strict';
 
 const _ = require('lodash');
+const moment = require('moment');
+
 const client = require('../Clients').fb;
+const model = require('../models/Model');
 
 const VALIDATION_TOKEN = 'hello_world_123';
 
-function generateButtons(values) {
+function generateButton(title, payload, type) {
+    type = type || 'postback';
+    return {
+        type: type,
+        title: title,
+        payload: payload
+    };
+}
+
+function generateTimesButtons(values) {
     return values.map((value) => {
-        let payload = JSON.stringify({command: `${value}m`});
-        return {
-            type: 'postback',
-            title: `${value} minutes`,
-            payload: payload
-        };
+        let payload = JSON.stringify({
+            command: {
+                alert: {
+                    time: value,
+                    unit: 'minutes'
+                }
+            }
+        });
+        return generateButton(`${value} minutes`, payload);
     });
 }
 
-function *sendButtons(userId, text, values) {
-    let buttons = generateButtons(values);
+function *sendTimeButtons(userId, text, values) {
+    let buttons = generateTimesButtons(values);
     try {
         yield client.sendButtonsMessage(userId, text, buttons);
     } catch (err) {
@@ -25,22 +40,26 @@ function *sendButtons(userId, text, values) {
     }
 }
 
-function transformRequestValue(value) {
-    try {
-        return JSON.parse(value);
-    } catch (err) {
-        return value.toLowerCase();
+function transformEventMessage(value) {
+    if (typeof value !== "object") {
+        try {
+            value = JSON.parse(value);
+        } catch (err) {
+            value = value.toLowerCase();
+        }
     }
+
+    return value;
 }
 
-function parseEvent(event) {
+function parseEvent(event, user) {
     let senderId = event.sender.id;
     let timestamp = event.timestamp;
-    let value = null, type, additonalData = {};
+    let value = null, type, additionalData = {};
     // extract command from message or postback events
     if (event.message) {
         value = event.message.text;
-        additonalData = _.omit(event.message, 'text');
+        additionalData = _.omit(event.message, 'text');
         type = 'message';
     } else if (event.postback) {
         value = event.postback.payload;
@@ -51,32 +70,31 @@ function parseEvent(event) {
 
     return Object.assign(
         {},
-        additonalData,
+        additionalData,
         {
-            type,
-            userPageId: senderId,
-            timestamp: timestamp,
-            value: transformRequestValue(value)
+            message: {
+                type,
+                userExternalId: senderId,
+                timestamp: timestamp,
+                body: transformEventMessage(value),
+            },
+            user: user
         }
     );
 }
 
-class Webhook {
-    static *handle() {
-        let req = this.request;
-        let res = this.response;
-        let data = req.body;
-
-        console.log('POST/Webhook was triggered');
-        // console.log('body:', JSON.stringify(data));
-
+class Facebook {
+    /**
+     * @param data: facebook messanger api object
+     */
+    *handle(data, user) {
         if (data.object && data.object == 'page') {
             for (let pageEntry of data.entry) {
                 if (pageEntry) {
-                    let parsedEvent = null;
                     for (let event of pageEntry.messaging) {
+                        let parsedEvent = null;
                         if (event.message || event.postback) {
-                            parsedEvent = parseEvent(event);
+                            parsedEvent = parseEvent(event, user);
                         } else if (event.delivery) {
                             // Webhook._receivedDeliveryConfirmation(event);
                         } else if (event.optin) {
@@ -84,18 +102,15 @@ class Webhook {
                         } else {
                             console.log('Unknown message');
                         }
-                    }
 
-                    if (parsedEvent) {
-                        console.log(parsedEvent);
-                        yield processParsedEvent(parsedEvent);
+                        if (parsedEvent) {
+                            console.log(parsedEvent);
+                            yield processEvent(parsedEvent);
+                        }
                     }
                 }
             }
         }
-
-        res.status = 200;
-        res.body = 'ok;'
     }
 
     static validateWebhook() {
@@ -133,14 +148,6 @@ class Webhook {
             yield client.sendTextMessage(senderId, "Quick reply tapped");
         } else {
 
-            let text = msg.text.toLowerCase();
-            if (text == 'more') {
-                yield sendButtons(senderId, 'More', [15, 20, 30]);
-            } else if (text == 'less') {
-                yield sendButtons(senderId, 'More', [1, 2, 4]);
-            } else {
-                yield client.sendTextMessage(senderId, 'Unsupported command');
-            }
         }
     }
 
@@ -198,7 +205,7 @@ class Webhook {
         console.log("All message before %d were delivered.", watermark);
     }
 
-    /*
+    /**
      * Postback Event
      *
      * This event is called when a postback is tapped on a Structured Message.
@@ -225,39 +232,86 @@ class Webhook {
     }
 }
 
-function *processParsedEvent(event) {
-    let value = event.value;
+function *processEvent(event) {
+    let body = event.message.body;
+    let senderId = event.user.external_id;
     // value can be command (value.command) or request (value.request) or a string
 
-    if (value.command) {
-        event.value = value.command;
+    if (body.command) {
+        event.message.body = body.command;
         yield processCommand(event);
-    } else if (value.request) {
-        event.value = value.request;
+    } else if (body.request) {
+        event.message.body = body.request;
         yield processRequest(event)
-    } else if (typeof value === 'string') {
+    } else if (typeof body === 'string') {
+        event.message.body = {value: body};
         yield processRequest(event)
     } else {
         yield client.sendTextMessage(senderId, 'Unsupported command');
     }
 }
 
-function *processCommand(event) {
-    let senderId = event.userPageId;
-    yield client.sendTextMessage(senderId, `Processing ${event.value}`);
-}
 
+const greetings = ['greetings', 'hi', 'hello', 'greeting'];
 function *processRequest(event) {
-    let value = event.value;
-    let senderId = event.userPageId;
+    let request = event.message.body;
+    let userExternalId = event.user.external_id;
+    let alert = event.user.alert;
 
-    if (value === 'more') {
-        yield sendButtons(senderId, 'When should I notify you?', [15, 20, 30]);
-    } else if (value === 'less') {
-        yield sendButtons(senderId, 'When should I notify you?', [1, 2, 4]);
+    if (request.value === 'more') {
+        yield sendTimeButtons(userExternalId, 'When should I notify you?', [15, 20, 30]);
+    } else if (request.value === 'less') {
+        yield sendTimeButtons(userExternalId, 'When should I notify you?', [1, 2, 4]);
+    } else if (greetings.indexOf(request.value) > -1) {
+        yield client.sendTextMessage(userExternalId, `Hi ${event.user.first_name}`);
+    } else if (alert && request.value === 'when') {
+        return yield client.sendTextMessage(userExternalId, `See you ${moment().to(alert.alert_time)}`);
     } else {
-        yield client.sendTextMessage(senderId, 'Unsupported request');
+        yield client.sendTextMessage(userExternalId, 'Unsupported request');
     }
 }
 
-module.exports = Webhook;
+function *processCommand(event) {
+    let userExternalId = event.user.external_id;
+    let command = event.message.body;
+
+    if (command.alert) {
+        yield handleAlert(event.user, command);
+    } else if (command.delete) {
+        yield handleDelete(event.user, command);
+    } else {
+        yield client.sendTextMessage(userExternalId, 'What...??');
+    }
+}
+
+function *handleAlert(user, command) {
+    let time = Number(command.alert.time);
+    let timeUnit = command.alert.unit;
+    let userExternalId = user.external_id;
+    let alert = user.alert;
+
+    if (alert) {
+        return yield client.sendTextMessage(userExternalId, `Alert is already activated (end ${moment().to(alert.alert_time)})`);
+    } else if (!time) {
+        console.log('Invalid time value: ', time);
+        return;
+    }
+
+    let alertTime = moment().add(time, timeUnit);
+    let alertTimeUtc = alertTime.toISOString();
+    yield model.insertAlert(user.id_user, alertTime.toDate(), alertTimeUtc, 'facebook');
+    yield client.sendTextMessage(userExternalId, `See you in ${time} ${timeUnit}`);
+}
+
+function *handleDelete(user, command) {
+    let alert = user.alert;
+
+    if (alert) {
+        yield model.deleteAlert(alert.id_alert);
+        yield client.sendTextMessage(user.external_id, 'Your alert has been deleted');
+    } else {
+        // send no alert message
+    }
+}
+
+module.exports = Facebook;

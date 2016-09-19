@@ -3,10 +3,29 @@
 const router = require('koa-router')();
 
 const config = require('../config');
-const Webhook = require('../controllers/Webhook');
+const Facebook = require('../controllers/Facebook');
 
-router.get('/webhook', Webhook.validateWebhook);
-router.post('/webhook', Webhook.handle);
+// midlewares
+const fbRegister = require('../middlewares/fbRegister');
+const getAlert = require('../middlewares/alert');
+
+
+const fb = new Facebook();
+
+
+router.get('/webhook', Facebook.validateWebhook);
+router.post('/webhook', fbRegister, getAlert, function *() {
+
+    console.log('POST/Webhook was triggered');
+
+    let data = this.request.body;
+    let user = this.user;
+
+    yield fb.handle(data, user);
+
+    this.response.status = 200;
+    this.response.body = 'ok;'
+});
 
 router.get('/env', function *() {
     this.body = process.env;
@@ -14,9 +33,6 @@ router.get('/env', function *() {
 router.get('/config', function *() {
     this.body = config;
 });
-router.get('/data', function *() {
-    let db = require('../utils/DB').instance;
-    this.body = yield db.query('select * from test_table');
-});
+
 
 module.exports = router.routes();

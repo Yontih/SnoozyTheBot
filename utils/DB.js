@@ -7,22 +7,25 @@ pg.defaults.ssl = true;
 class DB {
     constructor(config) {
         this.pool = new pg.Pool(config);
-        this.client = null;
     }
 
-    *startTransaction() {
-        let client = yield this._getClient();
-        yield client.query('BEGIN;');
-        return new Transaction(client);
+    startTransaction() {
+        return this._getClient()
+            .then((client) => {
+                return client.query('BEGIN;').return(client);
+            })
+            .then((client) => {
+                return new Transaction(client);
+            });
     }
 
-    *query(sql, args) {
-        let result = yield this.pool.query(sql, args);
-        return result.rows;
+    query(sql, args) {
+        return this.pool.query(sql, args)
+            .then((result) => result.rows);
     }
 
-    *_getClient() {
-        return yield this.pool.connect();
+    _getClient() {
+        return this.pool.connect();
     }
 }
 
@@ -34,18 +37,23 @@ class Transaction {
         this.client = clinet;
     }
 
-    *query(sql, args) {
-        return yield this.client.query(sql, args);
+    query(sql, args) {
+        return this.client.query(sql, args)
+            .then((result) => result.rows)
     }
 
-    *commit() {
-        yield this.query('COMMIT;');
-        this._end();
+    commit() {
+        return this.query('COMMIT;')
+            .then(() => {
+                return this._end();
+            });
     }
 
-    *rollback() {
-        yield this.query('ROLLBACK;');
-        this._end();
+    rollback() {
+        return this.query('ROLLBACK;')
+            .then(() => {
+                return this._end();
+            });
     }
 
     _end() {
